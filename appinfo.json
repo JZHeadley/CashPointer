@@ -1,0 +1,36 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        "location",
+        "configurable"
+    ],
+    "companyName": "CashPointer Dev Team",
+    "longName": "Capitol One ATM Locator",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/compass_background.png",
+                "menuIcon": true,
+                "name": "COMPASS_BACKGROUND",
+                "type": "png"
+            },
+            {
+                "file": "images/Arrow2.png",
+                "name": "direction_arrow",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "CashPointer",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "5ec1ba20-9b7f-4bbf-af47-6818a16e1a30",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
