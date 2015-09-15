@@ -12,8 +12,10 @@ static TextLayer *s_output_layer, *s_heading_layer;
 double bering = 0;
 static BitmapLayer *s_bitmap_layer;
 static GPath *s_needle_north;
-#define KEY_BERING 1
-
+#define KEY_Distance 2
+#define KEY_BUTTON 0
+#define KEY_VIBRATE 1
+#define KEY_ETA 3
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
@@ -131,10 +133,13 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
         text_layer_set_text(s_text_layer, "Vibrate!");
         vibes_short_pulse();
         break;
+       
        case KEY_DISTANCE:
-        // When distance recieved set text to distance
-        text_layer_set_text(s_text_layer,"Distance: ");
+       	static char s_launches_buffer[16];
+  	snprintf(s_launches_buffer, sizeof(s_launches_buffer), "Launches: %s", t->value->cstring);
+	text_layer_set_text(s_text_layer, s_launches_buffer);
         break;
+       
        case KEY_ETA:
         text_layer_set_text(s_text_layer,"ETA:");
         break;
