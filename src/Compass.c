@@ -1,5 +1,9 @@
 #include <pebble.h>
-
+    
+#define KEY_DISTANCE 2
+#define KEY_BUTTON 0
+#define KEY_VIBRATE 1
+#define KEY_ETA 3
 
 static Layer *s_path_layer;
 static Window *main_window;
@@ -12,10 +16,7 @@ static TextLayer *s_output_layer, *s_heading_layer;
 double bering = 0;
 static BitmapLayer *s_bitmap_layer;
 static GPath *s_needle_north;
-#define KEY_Distance 2
-#define KEY_BUTTON 0
-#define KEY_VIBRATE 1
-#define KEY_ETA 3
+
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
@@ -126,22 +127,21 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
 
   // Process all pairs present
   while(t != NULL) {
+          static char s_buffer[64];
     // Process this pair's key
     switch(t->key) {
-      case KEY_VIBRATE:
+      //case KEY_VIBRATE:
         // Trigger vibration
-        text_layer_set_text(s_text_layer, "Vibrate!");
-        vibes_short_pulse();
-        break;
-       
+        //text_layer_set_text(s_text_layer, "Vibrate!");
+        //vibes_short_pulse();
+        //break;       
        case KEY_DISTANCE:
-       	static char s_launches_buffer[16];
-  	snprintf(s_launches_buffer, sizeof(s_launches_buffer), "Launches: %s", t->value->cstring);
-	text_layer_set_text(s_text_layer, s_launches_buffer);
+      	snprintf(s_buffer, sizeof(s_buffer), "Launches: %s", t->value->cstring);
+	    text_layer_set_text(distance, s_buffer);
         break;
        
        case KEY_ETA:
-        text_layer_set_text(s_text_layer,"ETA:");
+        text_layer_set_text(timeTo,"ETA:");
         break;
       default:
         APP_LOG(APP_LOG_LEVEL_INFO, "Unknown key: %d", (int)t->key);

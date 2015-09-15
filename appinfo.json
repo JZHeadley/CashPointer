@@ -10,14 +10,14 @@
     "resources": {
         "media": [
             {
-                "file": "images/compass_background.png",
-                "menuIcon": true,
-                "name": "COMPASS_BACKGROUND",
+                "file": "images/Arrow2.png",
+                "name": "direction_arrow",
                 "type": "png"
             },
             {
-                "file": "images/Arrow2.png",
-                "name": "direction_arrow",
+                "file": "images/compass_background.png",
+                "menuIcon": true,
+                "name": "COMPASS_BACKGROUND",
                 "type": "png"
             }
         ]
