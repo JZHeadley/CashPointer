@@ -1,10 +1,14 @@
 #include <pebble.h>
-    
-#define KEY_DISTANCE 2
-#define KEY_BUTTON 0
-#define KEY_VIBRATE 1
-#define KEY_ETA 3
+ 
+#define KEY_BUTTON    0
+#define KEY_VIBRATE   1   
+#define KEY_DISTANCE  2
+#define KEY_ETA       3
 
+#define BUTTON_UP     0
+#define BUTTON_SELECT 1
+#define BUTTON_DOWN   2
+    
 static Layer *s_path_layer;
 static Window *main_window;
 static TextLayer *distance;
@@ -17,18 +21,64 @@ double bering = 0;
 static BitmapLayer *s_bitmap_layer;
 static GPath *s_needle_north;
 
+/******************************* AppMessage ***********************************/
 
-static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+static void send(int key, int message) {
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+
+  dict_write_int(iter, key, &message, sizeof(int), true);
+
+  app_message_outbox_send();
+}
+static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
+  // Get the first pair
+  Tuple *t = dict_read_first(iterator);
+
+  // Process all pairs present
+  while(t != NULL) {
+    static char s_buffer[32];
+    // Process this pair's key
+    switch(t->key) {
+      case KEY_VIBRATE:
+        // Trigger vibration
+        //text_layer_set_text(s_text_layer, "Vibrate!");
+        vibes_short_pulse();
+        break;       
+       case KEY_DISTANCE:
+        // When distance recieved set text to distance
+      	snprintf(s_buffer, sizeof(s_buffer), "Distance: %d", (int)t->value);
+	    text_layer_set_text(distance, s_buffer);
+        //text_layer_set_text(s_text_layer,"Distance: ");
+        break;
+       case KEY_ETA:
+      	snprintf(s_buffer, sizeof(s_buffer), "ETA: %d", (int)t->value);
+	    text_layer_set_text(timeTo, s_buffer);
+        //text_layer_set_text(s_text_layer,"ETA:");
+        break;
+      default:
+        APP_LOG(APP_LOG_LEVEL_INFO, "Unknown key: %d", (int)t->key);
+        break;
+    }
+
+    // Get next pair, if any
+    t = dict_read_next(iterator);
+  }
+}
+
+static void inbox_dropped_handler(AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
 }
 
-static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+static void outbox_failed_handler(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
 }
 
-static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+static void outbox_sent_handler(DictionaryIterator *iterator, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
+
+/******************************* EndAppMessage ***********************************/
 
 // Vector paths for the compass needles
 static const GPathInfo NEEDLE_NORTH_POINTS = { 
@@ -70,23 +120,23 @@ static void main_window_load(Window *window)
 	*/
 	GRect bounds = layer_get_frame(window_layer);
 	s_bitmap_layer = bitmap_layer_create(bounds);
-  s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_COMPASS_BACKGROUND);
-  bitmap_layer_set_bitmap(s_bitmap_layer, s_background_bitmap);
+    s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_COMPASS_BACKGROUND);
+    bitmap_layer_set_bitmap(s_bitmap_layer, s_background_bitmap);
 	bitmap_layer_set_compositing_mode(s_bitmap_layer, GCompOpAnd);
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
+    layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
 	
 
 	
 	// Create the layer in which we will draw the compass needles
-  s_path_layer = layer_create(bounds);
+    s_path_layer = layer_create(bounds);
   
-  //  Define the draw callback to use for this layer
-  layer_set_update_proc(s_path_layer, path_layer_update_callback);
-  layer_add_child(window_layer, s_path_layer);
+    //  Define the draw callback to use for this layer
+    layer_set_update_proc(s_path_layer, path_layer_update_callback);
+    layer_add_child(window_layer, s_path_layer);
 	
 	s_needle_north = gpath_create(&NEEDLE_NORTH_POINTS);
 	GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
-  gpath_move_to(s_needle_north, center);
+    gpath_move_to(s_needle_north, center);
 	
   
 	
@@ -95,8 +145,8 @@ static void main_window_load(Window *window)
 	distance = text_layer_create(GRect(0, 0, 144, 30));
 	//text_layer_set_text(distance, "Distance is x m");
 	static char s_heading_buf[16];
-  snprintf(s_heading_buf, sizeof(s_heading_buf),
-  "%i",(int)bering);
+    snprintf(s_heading_buf, sizeof(s_heading_buf),
+    "%i",(int)bering);
 	text_layer_set_text(distance, s_heading_buf);
 	text_layer_set_text_alignment(distance, GTextAlignmentCenter);
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(distance));
@@ -112,46 +162,6 @@ static void main_window_load(Window *window)
 
 
 
-/*
-static void send(int key, int msg) 
-{
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-  dict_write_int(iter, key, &msg, sizeof(int), true);
-  app_message_outbox_send();
-}
-*/
-static void inbox_received_handler(DictionaryIterator *iterator, void *context) {
-  // Get the first pair
-  Tuple *t = dict_read_first(iterator);
-
-  // Process all pairs present
-  while(t != NULL) {
-          static char s_buffer[64];
-    // Process this pair's key
-    switch(t->key) {
-      //case KEY_VIBRATE:
-        // Trigger vibration
-        //text_layer_set_text(s_text_layer, "Vibrate!");
-        //vibes_short_pulse();
-        //break;       
-       case KEY_DISTANCE:
-      	snprintf(s_buffer, sizeof(s_buffer), "Launches: %s", t->value->cstring);
-	    text_layer_set_text(distance, s_buffer);
-        break;
-       
-       case KEY_ETA:
-        text_layer_set_text(timeTo,"ETA:");
-        break;
-      default:
-        APP_LOG(APP_LOG_LEVEL_INFO, "Unknown key: %d", (int)t->key);
-        break;
-    }
-
-    // Get next pair, if any
-    t = dict_read_next(iterator);
-  }
-}
 static void inbox_received_callback(DictionaryIterator *iter, void *context) 
 {
 	Tuple *t = dict_read_first(iter);
@@ -178,23 +188,26 @@ static void main_window_unload(Window *window)
 	gpath_destroy(s_needle_north);
 }
 
-static void outbox_sent_handler(DictionaryIterator *iter, void *context) {
+//static void outbox_sent_handler(DictionaryIterator *iter, void *context) {
   // Ready for next command
-  text_layer_set_text (output, "Press up or down.");
-}
+//  text_layer_set_text (output, "Press up or down.");
+//}
 
-static void outbox_failed_handler(DictionaryIterator *iter, AppMessageResult reason, void *context) {
-  text_layer_set_text(output, "Send failed!");
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Fail reason: %d", (int)reason);
-}
+//static void outbox_failed_handler(DictionaryIterator *iter, AppMessageResult reason, void *context) {
+//  text_layer_set_text(output, "Send failed!");
+//  APP_LOG(APP_LOG_LEVEL_ERROR, "Fail reason: %d", (int)reason);
+//}
 
 static void init ()
 {
-	app_message_register_inbox_received(inbox_received_callback);
-	app_message_register_inbox_dropped(inbox_dropped_callback);
-	app_message_register_outbox_failed(outbox_failed_callback);
-	app_message_register_outbox_sent(outbox_sent_callback);
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  // Register callbacks
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_register_inbox_dropped(inbox_dropped_handler);
+  app_message_register_outbox_failed(outbox_failed_handler);
+  app_message_register_outbox_sent(outbox_sent_handler);
+  // Open AppMessage
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+    
 	compass_service_set_heading_filter(10);
 	compass_service_subscribe(&compass_handler); 
 	main_window = window_create();
@@ -220,3 +233,32 @@ int main()
 	app_event_loop();
 	deinit();
 }
+
+/******************************* Buttons ***********************************/
+
+static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+//  text_layer_set_text(distace, "Select");
+
+  send(KEY_BUTTON, BUTTON_SELECT);
+}
+
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  //text_layer_set_text(distance, "Up");
+
+  send(KEY_BUTTON, BUTTON_UP);
+}
+
+static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+  //text_layer_set_text(distance, "Down");
+
+  send(KEY_BUTTON, BUTTON_DOWN);
+}
+
+static void click_config_provider(void *context) {
+  // Assign button handlers
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+}
+
+/******************************* EndButtons ***********************************/
