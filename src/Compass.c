@@ -4,6 +4,7 @@
 #define KEY_VIBRATE   1   
 #define KEY_DISTANCE  2
 #define KEY_ETA       3
+#define KEY_BERING    4
 
 #define BUTTON_UP     0
 #define BUTTON_SELECT 1
@@ -55,6 +56,12 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
       	snprintf(s_buffer, sizeof(s_buffer), "ETA: %d", (int)t->value);
 	    text_layer_set_text(timeTo, s_buffer);
         //text_layer_set_text(s_text_layer,"ETA:");
+        break;
+       case KEY_BERING:
+         snprintf(s_buffer, sizeof(s_buffer), "Bearing: %d", (int)t->value);
+        text_layer_set_text(distance,s_buffer);
+         bering=((int) t->value)/1000;
+        vibes_short_pulse();
         break;
       default:
         APP_LOG(APP_LOG_LEVEL_INFO, "Unknown key: %d", (int)t->key);
